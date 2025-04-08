@@ -1,0 +1,34 @@
+/* You can add global styles to this file, and also import other style files */
+@use './tailwind.css';
+@use './assets/layout/layout.scss';
+@use 'primeicons/primeicons.css';
+@use './assets/demo/demo.scss';
+
+
+/* Augmente la largeur du stepper et force l'affichage du trait coloré */
+:host ::ng-deep .p-dialog .custom-stepper {
+    width: 100% !important;
+    min-width: 400px !important; /* Ajustez selon vos besoins */
+    display: block !important;
+  }
+  
+  /* Force l'affichage du trait de séparation vert */
+  :host ::ng-deep .p-dialog .custom-stepper .p-step-list-item.p-highlight .p-step-list-item-connector,
+  :host ::ng-deep .p-dialog .custom-stepper .p-step-list-item.p-highlight + .p-step-list-item .p-step-list-item-connector {
+    background-color: var(--primary-color, green) !important; /* Utilise la couleur primaire ou un vert par défaut */
+    opacity: 1 !important;
+    display: block !important;
+    height: 2px !important; /* Ajustez l'épaisseur selon vos besoins */
+  }
+  
+  /* S'assure que le container du stepper prend toute la largeur disponible */
+  :host ::ng-deep .p-dialog .stepper-container {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  
+  /* Ajuste le dialogue lui-même pour s'assurer qu'il a une largeur suffisante */
+  :host ::ng-deep .p-dialog.p-component {
+    min-width: 450px;
+    overflow: visible !important;
+  }
