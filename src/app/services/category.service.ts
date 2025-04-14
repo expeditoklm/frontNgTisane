@@ -1,16 +1,16 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Disease } from '../models';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
+import { Category } from '../models/category.model';
 
 
 @Injectable({
     providedIn: 'root'
   })
 @Injectable()
-export class DiseaseService {
+export class CategoryService {
  private baseUrl = `${environment.apiUrl}`;
     private headers = new HttpHeaders().set('Content-Type', 'application/json');
   
@@ -28,14 +28,14 @@ export class DiseaseService {
           .set('Authorization', `Bearer ${token}`);
       }
 
-    getAllDiseases(): Observable<any> {
-        return this.http.get<any>(`${this.baseUrl}/diseases`, {
+    getAllCategories(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/categories`, {
           headers: this.getAuthHeaders()
         });
     }
 
-    getAllDiseasesRemedies(): Observable<any> {
-        return this.http.get<any>(`${this.baseUrl}/remedy-diseases`, {
+    getAllCategoriesRemedies(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/remedy-categories`, {
           headers: this.getAuthHeaders()
         });
     }
@@ -43,16 +43,16 @@ export class DiseaseService {
 
     
         // Mettre à jour une campagne existante
-      updateDisease(id: string, disease: Disease): Observable<any> {
-        return this.http.put(`${this.baseUrl}/diseases/${id}`, disease, {
+      updatedCategorie(id: string, categorie: Category): Observable<any> {
+        return this.http.put(`${this.baseUrl}/categories/${id}`, categorie, {
             headers: this.getAuthHeaders()
           });
       }
     
     
        // Mettre à jour une campagne existante
-       createDisease(disease: Disease): Observable<any> {
-        return this.http.post(`${this.baseUrl}/diseases`, disease, {
+       createcategorie(category: Category): Observable<any> {
+        return this.http.post(`${this.baseUrl}/categories`, category, {
             headers: this.getAuthHeaders()
           });
       }
@@ -62,8 +62,8 @@ export class DiseaseService {
     
     
          // Mettre à jour une campagne existante
-         deletedDisease(id: string): Observable<any> {
-            return this.http.delete(`${this.baseUrl}/diseases/${id}`, {
+         deletedcategorie(id: string): Observable<any> {
+            return this.http.delete(`${this.baseUrl}/categories/${id}`, {
                 headers: this.getAuthHeaders()
               });
           }

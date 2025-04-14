@@ -1,44 +1,43 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Ingredient } from '../models';
+import { Disease } from '../models';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
+
+@Injectable({
+    providedIn: 'root'
+  })
 @Injectable()
 export class IngredientService {
-    constructor(private http: HttpClient) {}
+ private baseUrl = `${environment.apiUrl}`;
+    private headers = new HttpHeaders().set('Content-Type', 'application/json');
+  
 
-    private getIngredientsData(): Ingredient[] {
-        return [
-            {
-                id: 'd001',
-                name: 'Grippe',
-                description: 'Grippe',
-                photos: [{ id: 'r001', url: 'd001', ingredientId: 'd001', createdAt: new Date(), updatedAt: new Date(), deleted: false }],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deleted: false
-            },
-            {
-                id: 'd002',
-                name: 'Grippe',
-                description: 'Grippe',
-                photos: [{ id: 'r001', url: 'd001', ingredientId: 'd001', createdAt: new Date(), updatedAt: new Date(), deleted: false }],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deleted: false
-            },
-            {
-                id: 'd003',
-                name: 'Grippe',
-                description: 'Grippe',
-                photos: [{ id: 'r001', url: 'd001', ingredientId: 'd001', createdAt: new Date(), updatedAt: new Date(), deleted: false }],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deleted: false
-            }
-        ];
+    constructor(
+        private http: HttpClient,
+        private router: Router
+      ) { }
+
+
+ getAuthHeaders(): HttpHeaders {
+        const token = localStorage.getItem('token');
+        return new HttpHeaders()
+          .set('Content-Type', 'application/json')
+          .set('Authorization', `Bearer ${token}`);
+      }
+
+    getAllIngredients(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/ingredients`, {
+          headers: this.getAuthHeaders()
+        });
     }
 
-    getIngredients(): Promise<Ingredient[]> {
-        return Promise.resolve(this.getIngredientsData());
+    getAllIngredientsRemedies(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/remedy-ingredients`, {
+          headers: this.getAuthHeaders()
+        });
     }
+
 }

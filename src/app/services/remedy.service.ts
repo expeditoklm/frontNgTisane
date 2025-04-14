@@ -1,10 +1,25 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Remedy } from '../models';
+import { environment } from '../environments/environment';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 
+
+
+@Injectable({
+    providedIn: 'root'
+  })
 @Injectable()
 export class RemedyService {
-    constructor(private http: HttpClient) {}
+    private baseUrl = `${environment.apiUrl}`;
+    private headers = new HttpHeaders().set('Content-Type', 'application/json');
+  
+
+    constructor(
+        private http: HttpClient,
+        private router: Router
+      ) { }
 
     private getRemediesData(): Remedy[] {
         return [
@@ -35,8 +50,51 @@ export class RemedyService {
             }
         ];
     }
+ getAuthHeaders(): HttpHeaders {
+        const token = localStorage.getItem('token');
+        return new HttpHeaders()
+          .set('Content-Type', 'application/json')
+          .set('Authorization', `Bearer ${token}`);
+      }
 
-    getRemedies(): Promise<Remedy[]> {
-        return Promise.resolve(this.getRemediesData());
+    getAllRemidies(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/remedies`, {
+          headers: this.getAuthHeaders()
+        });
     }
+
+    getAllDiseasesRemedies(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/remedy-diseases`, {
+          headers: this.getAuthHeaders()
+        });
+    }
+
+    // Mettre à jour une campagne existante
+  updateRemedy(id: string, remedy: Remedy): Observable<any> {
+    return this.http.put(`${this.baseUrl}/remedies/${id}`, remedy, {
+        headers: this.getAuthHeaders()
+      });
+  }
+
+
+   // Mettre à jour une campagne existante
+   createRemedy(remedy: Remedy): Observable<any> {
+    return this.http.post(`${this.baseUrl}/remedies`, remedy, {
+        headers: this.getAuthHeaders()
+      });
+  }
+
+  
+
+
+
+     // Mettre à jour une campagne existante
+     deletedRemedy(id: string): Observable<any> {
+        return this.http.delete(`${this.baseUrl}/remedies/${id}`, {
+            headers: this.getAuthHeaders()
+          });
+      }
+    
+      
+
 }

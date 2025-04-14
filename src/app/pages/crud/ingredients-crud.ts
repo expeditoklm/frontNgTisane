@@ -188,9 +188,19 @@ export class Ingredients implements OnInit {
     }
 
     loadDemoData() {
-        this.ingredientService.getIngredients().then((data) => {
-            this.ingredients.set(data);
-        });
+    
+        this.ingredientService.getAllIngredients().subscribe({
+            next: (response: any) => {
+              console.log('ingredients de l\'API :', response);
+                this.ingredients = response.map((ingredient: any) => ({ name: ingredient.name, code: ingredient.id }));
+              
+            },
+            error: (error) => {
+              console.log('Erreur lors de la connexion :', error);
+              const errorMessage = error?.error?.message || 'Coordonnées Invalides';
+              // this.toastService.showError(errorMessage);
+            }
+          });
 
         this.cols = [
             { field: 'code', header: 'Code', customExportHeader: 'Ingredient Code' },

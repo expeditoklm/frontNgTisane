@@ -20,6 +20,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DiseaseService } from '../../services/disease.service';
 import { Disease } from '../../models';
+import { Category } from '../../models/category.model';
 interface Column {
     field: string;
     header: string;
@@ -164,7 +165,7 @@ export class Diseases implements OnInit {
     disease!: Disease;
 
     selectedDiseases!: Disease[] | null;
-
+    categories: Category[] = []; // Catégories supplémentaires
     submitted: boolean = false;
 
     statuses!: any[];
@@ -186,28 +187,48 @@ export class Diseases implements OnInit {
     }
 
     ngOnInit() {
+        this.loadCategories()
         this.loadDemoData();
     }
 
-    loadDemoData() {
-        this.diseaseService.getDiseases().then((data) => {
-            this.diseases.set(data);
+    loadCategories() {
+
+        this.diseaseService.getAllDiseases().subscribe({
+            next: (response: any) => {
+                //   console.log('maladies de l\'API :', response);
+                this.diseases = response.map((disease: any) => ({ name: disease.name, code: disease.id }));
+
+            },
+            error: (error) => {
+                console.log('Erreur lors de la connexion :', error);
+                const errorMessage = error?.error?.message || 'Coordonnées Invalides';
+                // this.toastService.showError(errorMessage);
+            }
         });
 
-        this.statuses = [
-            { label: 'INSTOCK', value: 'instock' },
-            { label: 'LOWSTOCK', value: 'lowstock' },
-            { label: 'OUTOFSTOCK', value: 'outofstock' }
-        ];
+    }
+
+    
+    loadDemoData(): void {
+        this.diseaseService.getAllDiseases().subscribe({
+            next: (response: any) => {
+                // console.log('Réponse de l\'API :', response);
+                this.diseases.set(response);
+            },
+            error: (error) => {
+                console.log('Erreur lors de la connexion :', error);
+                const errorMessage = error?.error?.message || 'Coordonnées Invalides';
+                // this.toastService.showError(errorMessage);
+            }
+        });
 
         this.cols = [
-            { field: 'code', header: 'Code', customExportHeader: 'Disease Code' },
+            { field: 'id', header: 'Code', customExportHeader: 'Disease Code' },
             { field: 'name', header: 'Name' },
-            { field: 'category', header: 'Categorie' }
         ];
-
         this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
     }
+
 
     onGlobalFilter(table: Table, event: Event) {
         table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
@@ -217,11 +238,16 @@ export class Diseases implements OnInit {
         this.disease = {};
         this.submitted = false;
         this.diseaseDialog = true;
+        this.submitted = false;
+        this.categories = [];
+
     }
 
     editDisease(disease: Disease) {
         this.disease = { ...disease };
         this.diseaseDialog = true;
+        this.categories = [];
+
     }
 
     deleteSelectedDiseases() {
