@@ -48,7 +48,7 @@ export class IngredientService {
 
   // Mettre à jour un ingrédient avec des images
   updateIngredient(id: string, ingredientData: any): Observable<Ingredient> {
-    return this.http.put<Ingredient>(`${this.baseUrl}/ingredients/${id}`, ingredientData, {
+    return this.http.patch<Ingredient>(`${this.baseUrl}/ingredients/${id}`, ingredientData, {
       headers: this.getAuthHeaders()
     });
   }

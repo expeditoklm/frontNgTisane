@@ -122,8 +122,6 @@ interface ExportColumn {
                         Valeur 
                         <p-sortIcon field="value" />
                     </th>
-
-                    <th>Image</th>
                     <th style="min-width: 8rem"></th>
                 </tr>
             </ng-template>
@@ -136,9 +134,7 @@ interface ExportColumn {
                     <!-- <pre>{{ remedy | json }}</pre>  -->
                     <td style="min-width: 16rem">{{ remedy.name }}</td>
                     <td style="min-width: 16rem">{{ remedy.value }}</td>
-                    <td>
-                        <img [src]="'https://primefaces.org/cdn/primeng/images/demo/remedy/' + remedy.image" [alt]="remedy.name" style="width: 64px" class="rounded" />
-                    </td>
+                
                     <td>
                         <div class="flex flex-wrap gap-2">
                             <p-button icon="pi pi-pencil" [rounded]="true" [outlined]="true" (click)="editRemedy(remedy)" />

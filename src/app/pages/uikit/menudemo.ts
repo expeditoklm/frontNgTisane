@@ -354,7 +354,7 @@ export class MenuDemo {
         },
         {
             label: 'Options',
-            icon: 'pi pi-cog'
+            icon: 'pi pi-ellipsis-v'
         }
     ];
     megaMenuItems = [

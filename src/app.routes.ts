@@ -8,17 +8,20 @@ import { Crud } from './app/pages/crud/crud';
 import { Diseases } from './app/pages/crud/diseases-crud';
 import { Ingredients } from './app/pages/crud/ingredients-crud';
 import { Remedies } from './app/pages/crud/remedies-crud';
+import { Categories } from './app/pages/crud/categories-crud';
+import { HerbalDashboard } from './app/pages/herbalDash/dashboard';
 
 export const appRoutes: Routes = [
     {
         path: '',
         component: AppLayout,
         children: [
-            { path: '', component: Dashboard },
+            { path: '', component: HerbalDashboard },
             { path: 'uikit', loadChildren: () => import('./app/pages/uikit/uikit.routes') },
             { path: 'diseases', component: Diseases },
             { path: 'ingredients', component: Ingredients },
             { path: 'remedies', component: Remedies },
+            { path: 'categories', component: Categories },
             { path: 'documentation', component: Documentation },
             { path: 'pages', loadChildren: () => import('./app/pages/pages.routes') }
         ]

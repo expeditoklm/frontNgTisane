@@ -40,6 +40,7 @@ interface GalleriaImage {
     thumbnailImageSrc?: string;
     alt?: string;
     title?: string;
+    id?: string; // 
 }
 
 @Component({
@@ -133,8 +134,8 @@ interface GalleriaImage {
                     <td style="min-width: 16rem">{{ ingredient.name }}</td>
                     <td style="min-width: 16rem">{{ ingredient.description }}</td>
                     <td>
-        <img [src]="ingredient.photos?.length ? ingredient.photos[0].url : 'assets/imgs/ingr.png'" [alt]="ingredient.name || 'Ingredient'" style="width: 64px" class="rounded" />
-    </td>
+                        <img [src]="ingredient.photos?.length ? ingredient.photos[0].url : 'assets/imgs/ingr.png'" [alt]="ingredient.name || 'Ingredient'" style="width: 64px" class="rounded" />
+                    </td>
                     <td>
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editIngredient(ingredient)" />
                         <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteIngredient(ingredient)" />
@@ -153,17 +154,28 @@ interface GalleriaImage {
                 <div class="flex flex-col gap-6">
                     <!-- Affichage des images existantes en mode carousel lors de l'édition -->
                     <div *ngIf="ingredient.id && galleryImages.length > 0" class="mb-4">
-                        <label class="block font-bold mb-3">Images existantes</label>
-                        <p-galleria [value]="galleryImages" [responsiveOptions]="galleriaResponsiveOptions" [containerStyle]="{ 'max-width': '600px' }" [numVisible]="5">
-                            <ng-template #item let-item>
-                                <!-- <pre> {{item | json }} </pre> -->
-                                <img [src]="item.itemImageSrc" style="width:100%; max-height: 300px; object-fit: contain;" [alt]="item.alt" />
-                            </ng-template>
-                            <ng-template #thumbnail let-item>
-                                <img [src]="item.thumbnailImageSrc" style="width: 70px; height: 70px; object-fit: cover;" [alt]="item.alt" />
-                            </ng-template>
-                        </p-galleria>
-                    </div>
+    <label class="block font-bold mb-3">Images existantes</label>
+    <p-galleria [value]="galleryImages" [responsiveOptions]="galleriaResponsiveOptions" [containerStyle]="{ 'max-width': '600px' }" [numVisible]="5">
+        <ng-template #item let-item>
+            <div class="relative">
+                <img [src]="item.itemImageSrc" style="width:100%; max-height: 300px; object-fit: contain;" [alt]="item.alt" />
+                <!-- Bouton pour supprimer la photo -->
+                <button 
+                    type="button" 
+                    pButton 
+                    icon="pi pi-trash" 
+                    class="p-button-rounded p-button-danger p-button-sm absolute top-2 right-2"
+                    (click)="deletePhoto(item.id, $event)">
+                </button>
+            </div>
+        </ng-template>
+        <ng-template #thumbnail let-item>
+            <div class="relative">
+                <img [src]="item.thumbnailImageSrc" style="width: 70px; height: 70px; object-fit: cover;" [alt]="item.alt" />
+            </div>
+        </ng-template>
+    </p-galleria>
+</div>
 
                     <!-- Upload de nouvelles images -->
                     <div>
@@ -183,15 +195,15 @@ interface GalleriaImage {
                         </p-fileupload>
                     </div>
 
-                    <div>
+                    <div class="field mb-4">
                         <label for="name" class="block font-bold mb-3">Nom</label>
-                        <input type="text" pInputText id="name" [(ngModel)]="ingredient.name" required autofocus />
+                        <input type="text" pInputText id="name" [(ngModel)]="ingredient.name" required autofocus  class="w-full" />
                         <small class="text-red-500" *ngIf="submitted && !ingredient.name">Le nom est requis.</small>
                     </div>
                     
-                    <div>
+                    <div class="field mb-4">
                         <label for="description" class="block font-bold mb-3">Description</label>
-                        <textarea id="description" pTextarea [(ngModel)]="ingredient.description" rows="3" cols="20"></textarea>
+                        <textarea id="description" pTextarea [(ngModel)]="ingredient.description" rows="3" cols="20"  class="w-full"></textarea>
                     </div>
                 </div>
             </ng-template>
@@ -221,7 +233,7 @@ export class Ingredients implements OnInit {
     selectedFiles: File[] = [];
     base64Images: string[] = [];
     galleryImages: GalleriaImage[] = [];
-
+    photosToDelete: string[] = [];
     galleriaResponsiveOptions = [
         {
             breakpoint: '1024px',
@@ -247,7 +259,7 @@ export class Ingredients implements OnInit {
         private ingredientService: IngredientService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService
-    ) {}
+    ) { }
 
     exportCSV() {
         this.dt.exportCSV();
@@ -296,31 +308,96 @@ export class Ingredients implements OnInit {
         this.selectedFiles = [];
         this.base64Images = [];
         this.galleryImages = [];
+        this.photosToDelete = []; //
     }
 
-    editIngredient(ingredient: Ingredient) {
+    
+
+    deletePhoto(photoId: string, event?: Event) {
+        // Empêcher la propagation de l'événement
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        
+        // Ne pas ajouter d'ID undefined
+        if (photoId) {
+          this.photosToDelete.push(photoId);
+        }
+        
+        // Mettre à jour l'objet ingrédient
+        if (this.ingredient.photos) {
+          this.ingredient.photos = this.ingredient.photos.filter(photo => photo.id !== photoId);
+          
+          // Recréer la gallerie d'images
+          this.galleryImages = this.ingredient.photos.map(photo => ({
+            itemImageSrc: photo.url,
+            thumbnailImageSrc: photo.url,
+            alt: this.ingredient.name || 'Image',
+            title: this.ingredient.name || 'Image',
+            id: photo.id
+          }));
+        }
+        
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Photo marquée pour suppression',
+          detail: 'La photo sera supprimée lors de l\'enregistrement',
+          life: 3000
+        });
+      }
+
+   
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      editIngredient(ingredient: Ingredient) {
         // Charger l'ingrédient complet avec ses photos
         this.loading = true;
+        
+        // Réinitialiser ces variables avant le chargement
+        this.selectedFiles = [];
+        this.base64Images = [];
+        this.photosToDelete = [];
+        this.galleryImages = [];
+        
         this.ingredientService.getIngredientById(ingredient.id!)
             .pipe(finalize(() => this.loading = false))
             .subscribe({
                 next: (data: Ingredient) => {
                     this.ingredient = { ...data };
                     this.ingredientDialog = true;
-                    this.selectedFiles = [];
-                    this.base64Images = [];
                     
-                    // Créer les images pour la galerie
-                    if (this.ingredient.photos && this.ingredient.photos.length > 0) {
-                        this.galleryImages = this.ingredient.photos.map(photo => ({
+                    // Créer les images pour la galerie - avec validation
+                    if (this.ingredient.photos && Array.isArray(this.ingredient.photos) && this.ingredient.photos.length > 0) {
+                        this.galleryImages = this.ingredient.photos
+                          .filter(photo => photo && photo.url) // S'assurer que les photos sont valides
+                          .map(photo => ({
                             itemImageSrc: photo.url,
                             thumbnailImageSrc: photo.url,
                             alt: this.ingredient.name || 'Image',
-                            title: this.ingredient.name || 'Image'
+                            title: this.ingredient.name || 'Image',
+                            id: photo.id
                         }));
                     } else {
                         this.galleryImages = [];
                     }
+                    
+                    // Debug
+                    console.log('Photos chargées:', this.ingredient.photos);
+                    console.log('Galleria images:', this.galleryImages);
                 },
                 error: (error) => {
                     console.error('Erreur lors du chargement des détails:', error);
@@ -330,13 +407,27 @@ export class Ingredients implements OnInit {
                         detail: 'Impossible de charger les détails de l\'ingrédient',
                         life: 3000
                     });
+                    // Fermer la boîte de dialogue en cas d'erreur
+                    this.ingredientDialog = false;
                 }
             });
-    }
+      }
+
+
+
+
+
+
+
+
+
+
+
+      
 
     onFileSelect(event: any) {
         this.selectedFiles = event.files;
-        
+
         // Convertir les fichiers en base64
         for (let file of this.selectedFiles) {
             const reader = new FileReader();
@@ -353,10 +444,10 @@ export class Ingredients implements OnInit {
             header: 'Confirmation',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                const deletePromises = this.selectedIngredients!.map(ingredient => 
+                const deletePromises = this.selectedIngredients!.map(ingredient =>
                     this.ingredientService.deleteIngredient(ingredient.id!).toPromise()
                 );
-                
+
                 Promise.all(deletePromises)
                     .then(() => {
                         this.ingredients.set(this.ingredients().filter(val => !this.selectedIngredients?.includes(val)));
@@ -421,23 +512,32 @@ export class Ingredients implements OnInit {
 
     saveIngredient() {
         this.submitted = true;
-    
+
         if (!this.ingredient.name?.trim()) {
             return;
         }
-    
+
         // Extraire et supprimer 'photos' pour éviter les erreurs de validation Prisma
         const { photos, ...ingredientWithoutPhotos } = this.ingredient;
-        
-        // Préparation des données avec les images
-        const ingredientData = { 
+
+        // Préparation des données avec les images et les IDs de photos à supprimer
+        const ingredientData = {
             ...ingredientWithoutPhotos,
-            ...(this.base64Images.length ? { imgUrls: this.base64Images } : {})
+            ...(this.base64Images.length ? { imgUrls: this.base64Images } : {}),
+            ...(this.photosToDelete.length ? { photoIdsToDelete: this.photosToDelete } : {})
         };
-    
+
+
+         
+        // Filtrer les ID undefined et n'inclure les photoIdsToDelete que s'il y en a
+        const validPhotoIds = this.photosToDelete.filter(id => id !== undefined);
+        if (validPhotoIds.length > 0) {
+            ingredientData.photoIdsToDelete = validPhotoIds;
+        }
+
         // Ajouter un log pour déboguer
         console.log('Données à envoyer:', ingredientData);
-    
+
         if (this.ingredient.id) {
             // Mise à jour
             this.ingredientService.updateIngredient(this.ingredient.id, ingredientData)
@@ -449,7 +549,7 @@ export class Ingredients implements OnInit {
                             updatedIngredients[index] = updatedIngredient;
                             this.ingredients.set(updatedIngredients);
                         }
-                        
+
                         this.messageService.add({
                             severity: 'success',
                             summary: 'Succès',
@@ -487,6 +587,7 @@ export class Ingredients implements OnInit {
                         this.ingredient = {};
                         this.selectedFiles = [];
                         this.base64Images = [];
+                        this.loadIngredients();
                     },
                     error: (error) => {
                         console.error('Erreur lors de la création:', error);

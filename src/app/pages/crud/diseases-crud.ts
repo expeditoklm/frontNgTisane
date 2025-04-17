@@ -22,6 +22,8 @@ import { DiseaseService } from '../../services/disease.service';
 import { Disease } from '../../models';
 import { Category } from '../../models/category.model';
 import { CategoryService } from '../../services/category.service';
+import { RemedyService } from '../../services/remedy.service';
+import { Remedy } from '../../models';
 
 interface Column {
     field: string;
@@ -32,6 +34,14 @@ interface Column {
 interface ExportColumn {
     title: string;
     dataKey: string;
+}
+
+interface DiseaseRemedy {
+    remedyId: string;
+    diseaseId: string;
+    createdAt: Date;
+    updatedAt: Date;
+    deleted: boolean;
 }
 
 @Component({
@@ -77,7 +87,7 @@ interface ExportColumn {
             [rows]="10"
             [columns]="cols"
             [paginator]="true"
-            [globalFilterFields]="['name', 'category', 'description']"
+            [globalFilterFields]="['name', 'category', 'description', 'remedies']"
             [tableStyle]="{ 'min-width': '75rem' }"
             [(selection)]="selectedDiseases"
             [rowHover]="true"
@@ -100,8 +110,8 @@ interface ExportColumn {
                     <th style="width: 3rem">
                         <p-tableHeaderCheckbox />
                     </th>
-                    <th style="min-width: 16rem">Code</th>
-                    <th pSortableColumn="name" style="min-width:16rem">
+                    <th style="min-width: 8rem">Code</th>
+                    <th pSortableColumn="name" style="min-width:12rem">
                         Nom
                         <p-sortIcon field="name" />
                     </th>
@@ -110,8 +120,12 @@ interface ExportColumn {
                         Categorie
                         <p-sortIcon field="categoryId" />
                     </th>
+                    
+                    <th style="min-width:16rem">
+                        Remèdes Associés
+                    </th>
 
-                    <th style="min-width: 12rem"></th>
+                    <th style="min-width: 8rem"></th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-disease>
@@ -119,11 +133,10 @@ interface ExportColumn {
                     <td style="width: 3rem">
                         <p-tableCheckbox [value]="disease" />
                     </td>
-                    <td style="min-width: 12rem">{{ disease.id }}</td>
-                    <td style="min-width: 16rem">{{ disease.name }}</td>
-
+                    <td>{{ disease.id }}</td>
+                    <td>{{ disease.name }}</td>
                     <td>{{ getCategoryName(disease.categoryId) }}</td>
-
+                    <td>{{ getDiseaseRemedies(disease.id) }}</td>
                     <td>
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editDisease(disease)" />
                         <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteDisease(disease)" />
@@ -159,7 +172,7 @@ interface ExportColumn {
 
         <p-confirmdialog [style]="{ width: '450px' }" />
     `,
-    providers: [MessageService, DiseaseService, ConfirmationService, CategoryService]
+    providers: [MessageService, DiseaseService, ConfirmationService, CategoryService, RemedyService]
 })
 export class Diseases implements OnInit {
     diseaseDialog: boolean = false;
@@ -170,6 +183,9 @@ export class Diseases implements OnInit {
 
     selectedDiseases!: Disease[] | null;
     categories: Category[] = [];
+    remedies: Remedy[] = [];
+    diseaseRemedies: DiseaseRemedy[] = [];
+    
     submitted: boolean = false;
 
     @ViewChild('dt') dt!: Table;
@@ -181,6 +197,7 @@ export class Diseases implements OnInit {
     constructor(
         private diseaseService: DiseaseService,
         private categoryService: CategoryService,
+        private remedyService: RemedyService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService
     ) {}
@@ -192,11 +209,14 @@ export class Diseases implements OnInit {
     ngOnInit() {
         this.loadCategories();
         this.loadDiseases();
+        this.loadRemedies();
+        this.loadDiseaseRemedies();
         
         this.cols = [
             { field: 'id', header: 'Code', customExportHeader: 'Disease Code' },
-            { field: 'name', header: 'Name' },
-            { field: 'categoryId', header: 'Category' },
+            { field: 'name', header: 'Nom' },
+            { field: 'categoryId', header: 'Categorie' },
+            { field: 'remedies', header: 'Remèdes Associés' },
             { field: 'description', header: 'Description' }
         ];
         this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
@@ -219,10 +239,63 @@ export class Diseases implements OnInit {
         });
     }
 
+    loadRemedies() {
+        this.remedyService.getAllRemidies().subscribe({
+            next: (response: Remedy[]) => {
+                this.remedies = response.filter(remedy => !remedy.deleted);
+            },
+            error: (error) => {
+                console.error('Error loading remedies:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Unable to load remedies',
+                    life: 3000
+                });
+            }
+        });
+    }
+
+    loadDiseaseRemedies() {
+        this.remedyService.getAllDiseasesRemedies().subscribe({
+            next: (response: DiseaseRemedy[]) => {
+                this.diseaseRemedies = response.filter(dr => !dr.deleted);
+            },
+            error: (error) => {
+                console.error('Error loading disease-remedies:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Unable to load disease-remedies relationships',
+                    life: 3000
+                });
+            }
+        });
+    }
+
     getCategoryName(categoryId: string | undefined): string {
         if (!categoryId) return 'No Category';
         const category = this.categories.find(c => c.id === categoryId);
         return category ? category.name! : 'Unknown Category';
+    }
+
+    getDiseaseRemedies(diseaseId: string | undefined): string {
+        if (!diseaseId) return 'Aucun remède';
+        
+        // Trouver tous les remedyIds associés à cette maladie
+        const associatedRemedyIds = this.diseaseRemedies
+            .filter(dr => dr.diseaseId === diseaseId)
+            .map(dr => dr.remedyId);
+        
+        // Récupérer les noms des remèdes correspondants
+        const remedyNames = associatedRemedyIds
+            .map(remedyId => {
+                const remedy = this.remedies.find(r => r.id === remedyId);
+                return remedy ? remedy.name : null;
+            })
+            .filter(name => name !== null);  // Éliminer les éventuels nuls
+        
+        return remedyNames.length > 0 ? remedyNames.join(', ') : 'Aucun remède';
     }
     
     loadDiseases(): void {

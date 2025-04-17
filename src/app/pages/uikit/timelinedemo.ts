@@ -119,7 +119,7 @@ export class TimelineDemo {
             {
                 status: 'Processing',
                 date: '15/10/2020 14:00',
-                icon: 'pi pi-cog',
+                icon: 'pi pi-ellipsis-v',
                 color: '#673AB7'
             },
             {
