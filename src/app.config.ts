@@ -6,6 +6,7 @@ import Aura from '@primeng/themes/aura';
 import { providePrimeNG } from 'primeng/config';
 import { appRoutes } from './app.routes';
 import { loggerInterceptor } from './app/interceptors/logger.interceptor';
+import { imageUrlInterceptor } from './app/interceptors/image-url.interceptor';
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -14,8 +15,19 @@ export const appConfig: ApplicationConfig = {
             withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }), 
             withEnabledBlockingInitialNavigation()
         ),
-        provideHttpClient(withFetch(), withInterceptors([loggerInterceptor])),
+        provideHttpClient(
+            withFetch(), 
+            withInterceptors([
+                loggerInterceptor,
+                imageUrlInterceptor
+            ])
+        ),
         provideAnimationsAsync(),
-        providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } })
+        providePrimeNG({ 
+            theme: { 
+                preset: Aura, 
+                options: { darkModeSelector: '.app-dark' } 
+            } 
+        })
     ]
 };

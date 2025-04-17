@@ -33,14 +33,6 @@ export class CategoryService {
           headers: this.getAuthHeaders()
         });
     }
-
-    getAllCategoriesRemedies(): Observable<any> {
-        return this.http.get<any>(`${this.baseUrl}/remedy-categories`, {
-          headers: this.getAuthHeaders()
-        });
-    }
-
-
     
         // Mettre à jour une campagne existante
       updatedCategorie(id: string, categorie: Category): Observable<any> {

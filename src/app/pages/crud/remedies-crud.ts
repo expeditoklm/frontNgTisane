@@ -66,6 +66,8 @@ interface ExportColumn {
         MultiSelectModule
     ],
     template: `
+        <p-toast></p-toast>
+        
         <p-toolbar styleClass="mb-6 flex-wrap">
             <ng-template #start>
                 <div class="flex gap-2 flex-wrap">

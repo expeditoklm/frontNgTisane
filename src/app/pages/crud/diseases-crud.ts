@@ -21,6 +21,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DiseaseService } from '../../services/disease.service';
 import { Disease } from '../../models';
 import { Category } from '../../models/category.model';
+import { CategoryService } from '../../services/category.service';
+
 interface Column {
     field: string;
     header: string;
@@ -56,13 +58,15 @@ interface ExportColumn {
         ConfirmDialogModule
     ],
     template: `
+        <p-toast></p-toast>
+        
         <p-toolbar styleClass="mb-6">
-            <ng-template #start>
+            <ng-template pTemplate="start">
                 <p-button label="Nouveau" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
                 <p-button severity="secondary" label="Supprimer" icon="pi pi-trash" outlined (onClick)="deleteSelectedDiseases()" [disabled]="!selectedDiseases || !selectedDiseases.length" />
             </ng-template>
 
-            <ng-template #end>
+            <ng-template pTemplate="end">
                 <p-button label="Exporter" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV()" />
             </ng-template>
         </p-toolbar>
@@ -73,7 +77,7 @@ interface ExportColumn {
             [rows]="10"
             [columns]="cols"
             [paginator]="true"
-            [globalFilterFields]="['name', 'country.name', 'ecole', 'representative.name', 'status']"
+            [globalFilterFields]="['name', 'category', 'description']"
             [tableStyle]="{ 'min-width': '75rem' }"
             [(selection)]="selectedDiseases"
             [rowHover]="true"
@@ -82,7 +86,7 @@ interface ExportColumn {
             [showCurrentPageReport]="true"
             [rowsPerPageOptions]="[10, 20, 30]"
         >
-            <ng-template #caption>
+            <ng-template pTemplate="caption">
                 <div class="flex items-center justify-between">
                     <h5 class="m-0">Gestion Des Maladies</h5>
                     <p-iconfield>
@@ -91,7 +95,7 @@ interface ExportColumn {
                     </p-iconfield>
                 </div>
             </ng-template>
-            <ng-template #header>
+            <ng-template pTemplate="header">
                 <tr>
                     <th style="width: 3rem">
                         <p-tableHeaderCheckbox />
@@ -102,15 +106,15 @@ interface ExportColumn {
                         <p-sortIcon field="name" />
                     </th>
 
-                    <th pSortableColumn="category" style="min-width:10rem">
+                    <th pSortableColumn="categoryId" style="min-width:10rem">
                         Categorie
-                        <p-sortIcon field="category" />
+                        <p-sortIcon field="categoryId" />
                     </th>
 
                     <th style="min-width: 12rem"></th>
                 </tr>
             </ng-template>
-            <ng-template #body let-disease>
+            <ng-template pTemplate="body" let-disease>
                 <tr>
                     <td style="width: 3rem">
                         <p-tableCheckbox [value]="disease" />
@@ -118,7 +122,7 @@ interface ExportColumn {
                     <td style="min-width: 12rem">{{ disease.id }}</td>
                     <td style="min-width: 16rem">{{ disease.name }}</td>
 
-                    <td>{{ disease.categoryId }}</td>
+                    <td>{{ getCategoryName(disease.categoryId) }}</td>
 
                     <td>
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editDisease(disease)" />
@@ -129,25 +133,25 @@ interface ExportColumn {
         </p-table>
 
         <p-dialog [(visible)]="diseaseDialog" [style]="{ width: '450px' }" header="Details De La Maladie" [modal]="true">
-            <ng-template #content>
+            <ng-template pTemplate="content">
                 <div class="flex flex-col gap-6">
                     <div>
-                        <label for="inventoryStatus" class="block font-bold mb-3">Catégorie</label>
-                        <p-select [(ngModel)]="disease.categoryId" name="category" inputId="inventoryStatus" [options]="statuses" optionLabel="label" optionValue="label" placeholder="Selectionner une catégorie" fluid />
+                        <label for="category" class="block font-bold mb-3">Catégorie</label>
+                        <p-select [(ngModel)]="disease.categoryId" name="category" inputId="category" [options]="categories" optionLabel="name" optionValue="id" placeholder="Selectionner une catégorie" [style]="{ width: '100%' }" />
                     </div>
                     <div>
                         <label for="name" class="block font-bold mb-3">Nom</label>
-                        <input type="text" pInputText id="name" [(ngModel)]="disease.name" required autofocus fluid />
+                        <input type="text" pInputText id="name" [(ngModel)]="disease.name" required autofocus [style]="{ width: '100%' }" />
                         <small class="text-red-500" *ngIf="submitted && !disease.name">Le nom est requis.</small>
                     </div>
                     <div>
                         <label for="description" class="block font-bold mb-3">Description</label>
-                        <textarea id="description" pTextarea [(ngModel)]="disease.description" required rows="3" cols="20" fluid></textarea>
+                        <textarea id="description" pTextarea [(ngModel)]="disease.description" required rows="3" cols="20" [style]="{ width: '100%' }"></textarea>
                     </div>
                 </div>
             </ng-template>
 
-            <ng-template #footer>
+            <ng-template pTemplate="footer">
                 <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
                 <p-button label="Save" icon="pi pi-check" (click)="saveDisease()" />
             </ng-template>
@@ -155,7 +159,7 @@ interface ExportColumn {
 
         <p-confirmdialog [style]="{ width: '450px' }" />
     `,
-    providers: [MessageService, DiseaseService, ConfirmationService]
+    providers: [MessageService, DiseaseService, ConfirmationService, CategoryService]
 })
 export class Diseases implements OnInit {
     diseaseDialog: boolean = false;
@@ -165,10 +169,8 @@ export class Diseases implements OnInit {
     disease!: Disease;
 
     selectedDiseases!: Disease[] | null;
-    categories: Category[] = []; // Catégories supplémentaires
+    categories: Category[] = [];
     submitted: boolean = false;
-
-    statuses!: any[];
 
     @ViewChild('dt') dt!: Table;
 
@@ -178,6 +180,7 @@ export class Diseases implements OnInit {
 
     constructor(
         private diseaseService: DiseaseService,
+        private categoryService: CategoryService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService
     ) {}
@@ -187,48 +190,57 @@ export class Diseases implements OnInit {
     }
 
     ngOnInit() {
-        this.loadCategories()
-        this.loadDemoData();
-    }
-
-    loadCategories() {
-
-        this.diseaseService.getAllDiseases().subscribe({
-            next: (response: any) => {
-                //   console.log('maladies de l\'API :', response);
-                this.diseases = response.map((disease: any) => ({ name: disease.name, code: disease.id }));
-
-            },
-            error: (error) => {
-                console.log('Erreur lors de la connexion :', error);
-                const errorMessage = error?.error?.message || 'Coordonnées Invalides';
-                // this.toastService.showError(errorMessage);
-            }
-        });
-
-    }
-
-    
-    loadDemoData(): void {
-        this.diseaseService.getAllDiseases().subscribe({
-            next: (response: any) => {
-                // console.log('Réponse de l\'API :', response);
-                this.diseases.set(response);
-            },
-            error: (error) => {
-                console.log('Erreur lors de la connexion :', error);
-                const errorMessage = error?.error?.message || 'Coordonnées Invalides';
-                // this.toastService.showError(errorMessage);
-            }
-        });
-
+        this.loadCategories();
+        this.loadDiseases();
+        
         this.cols = [
             { field: 'id', header: 'Code', customExportHeader: 'Disease Code' },
             { field: 'name', header: 'Name' },
+            { field: 'categoryId', header: 'Category' },
+            { field: 'description', header: 'Description' }
         ];
         this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
     }
 
+    loadCategories() {
+        this.categoryService.getAllCategories().subscribe({
+            next: (response: Category[]) => {
+                this.categories = response.filter(category => !category.deleted);
+            },
+            error: (error) => {
+                console.error('Error loading categories:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Unable to load categories',
+                    life: 3000
+                });
+            }
+        });
+    }
+
+    getCategoryName(categoryId: string | undefined): string {
+        if (!categoryId) return 'No Category';
+        const category = this.categories.find(c => c.id === categoryId);
+        return category ? category.name! : 'Unknown Category';
+    }
+    
+    loadDiseases(): void {
+        this.diseaseService.getAllDiseases().subscribe({
+            next: (response: Disease[]) => {
+                this.diseases.set(response.filter(disease => !disease.deleted));
+            },
+            error: (error) => {
+                console.error('Error loading diseases:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Unable to load diseases',
+                    life: 3000
+                });
+            }
+        });
+    }
 
     onGlobalFilter(table: Table, event: Event) {
         table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
@@ -238,16 +250,11 @@ export class Diseases implements OnInit {
         this.disease = {};
         this.submitted = false;
         this.diseaseDialog = true;
-        this.submitted = false;
-        this.categories = [];
-
     }
 
     editDisease(disease: Disease) {
         this.disease = { ...disease };
         this.diseaseDialog = true;
-        this.categories = [];
-
     }
 
     deleteSelectedDiseases() {
@@ -256,14 +263,36 @@ export class Diseases implements OnInit {
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.diseases.set(this.diseases().filter((val) => !this.selectedDiseases?.includes(val)));
-                this.selectedDiseases = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Diseases Deleted',
-                    life: 3000
-                });
+                if (this.selectedDiseases && this.selectedDiseases.length > 0) {
+                    const deletePromises = this.selectedDiseases.map(disease => {
+                        if (disease.id) {
+                            return this.diseaseService.deleteDisease(disease.id).toPromise();
+                        }
+                        return Promise.resolve();
+                    });
+                    
+                    Promise.all(deletePromises)
+                        .then(() => {
+                            this.diseases.set(this.diseases().filter(val => !this.selectedDiseases?.includes(val)));
+                            this.selectedDiseases = null;
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Successful',
+                                detail: 'Diseases Deleted',
+                                life: 3000
+                            });
+                            this.loadDiseases(); // Refresh the list
+                        })
+                        .catch(error => {
+                            console.error('Error deleting diseases:', error);
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Error',
+                                detail: 'Failed to delete diseases',
+                                life: 3000
+                            });
+                        });
+                }
             }
         });
     }
@@ -279,76 +308,80 @@ export class Diseases implements OnInit {
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.diseases.set(this.diseases().filter((val) => val.id !== disease.id));
-                this.disease = {};
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Disease Deleted',
-                    life: 3000
-                });
+                if (disease.id) {
+                    this.diseaseService.deleteDisease(disease.id).subscribe({
+                        next: () => {
+                            this.diseases.set(this.diseases().filter(val => val.id !== disease.id));
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Successful',
+                                detail: 'Disease Deleted',
+                                life: 3000
+                            });
+                        },
+                        error: (error) => {
+                            console.error('Error deleting disease:', error);
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Error',
+                                detail: 'Failed to delete disease',
+                                life: 3000
+                            });
+                        }
+                    });
+                }
             }
         });
     }
 
-    findIndexById(id: string): number {
-        let index = -1;
-        for (let i = 0; i < this.diseases().length; i++) {
-            if (this.diseases()[i].id === id) {
-                index = i;
-                break;
-            }
-        }
-
-        return index;
-    }
-
-    createId(): string {
-        let id = '';
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < 5; i++) {
-            id += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return id;
-    }
-
-    getSeverity(status: string) {
-        switch (status) {
-            case 'INSTOCK':
-                return 'success';
-            case 'LOWSTOCK':
-                return 'warn';
-            case 'OUTOFSTOCK':
-                return 'danger';
-            default:
-                return 'info';
-        }
-    }
-
     saveDisease() {
         this.submitted = true;
-        let _diseases = this.diseases();
+        
         if (this.disease.name?.trim()) {
             if (this.disease.id) {
-                _diseases[this.findIndexById(this.disease.id)] = this.disease;
-                this.diseases.set([..._diseases]);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Disease Updated',
-                    life: 3000
+                // Update existing disease
+                this.diseaseService.updateDisease(this.disease.id, this.disease).subscribe({
+                    next: (updatedDisease) => {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Successful',
+                            detail: 'Disease Updated',
+                            life: 3000
+                        });
+                        this.loadDiseases(); // Refresh the list
+                    },
+                    error: (error) => {
+                        console.error('Error updating disease:', error);
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error',
+                            detail: 'Failed to update disease',
+                            life: 3000
+                        });
+                    }
                 });
             } else {
-                this.disease.id = this.createId();
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Disease Created',
-                    life: 3000
+                // Create new disease
+                this.diseaseService.createDisease(this.disease).subscribe({
+                    next: (newDisease) => {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Successful',
+                            detail: 'Disease Created',
+                            life: 3000
+                        });
+                        this.loadDiseases(); // Refresh the list
+                    },
+                    error: (error) => {
+                        console.error('Error creating disease:', error);
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error',
+                            detail: 'Failed to create disease',
+                            life: 3000
+                        });
+                    }
                 });
-                console.log('les données', this.disease);
-
-                this.diseases.set([..._diseases, this.disease]);
             }
 
             this.diseaseDialog = false;

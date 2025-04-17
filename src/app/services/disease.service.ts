@@ -62,7 +62,7 @@ export class DiseaseService {
     
     
          // Mettre à jour une campagne existante
-         deletedDisease(id: string): Observable<any> {
+         deleteDisease(id: string): Observable<any> {
             return this.http.delete(`${this.baseUrl}/diseases/${id}`, {
                 headers: this.getAuthHeaders()
               });

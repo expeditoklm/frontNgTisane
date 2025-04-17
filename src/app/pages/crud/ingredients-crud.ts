@@ -18,8 +18,12 @@ import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { FileUploadModule } from 'primeng/fileupload';
+import { GalleriaModule } from 'primeng/galleria';
 import { Ingredient } from '../../models';
 import { IngredientService } from '../../services/ingredient.service';
+import { finalize } from 'rxjs';
+
 interface Column {
     field: string;
     header: string;
@@ -29,6 +33,13 @@ interface Column {
 interface ExportColumn {
     title: string;
     dataKey: string;
+}
+
+interface GalleriaImage {
+    itemImageSrc?: string;
+    thumbnailImageSrc?: string;
+    alt?: string;
+    title?: string;
 }
 
 @Component({
@@ -52,9 +63,13 @@ interface ExportColumn {
         TagModule,
         InputIconModule,
         IconFieldModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        FileUploadModule,
+        GalleriaModule
     ],
     template: `
+        <p-toast></p-toast>
+        
         <p-toolbar styleClass="mb-6">
             <ng-template #start>
                 <p-button label="Nouveau" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
@@ -72,7 +87,7 @@ interface ExportColumn {
             [rows]="10"
             [columns]="cols"
             [paginator]="true"
-            [globalFilterFields]="['name', 'country.name', 'ecole', 'representative.name', 'status']"
+            [globalFilterFields]="['name', 'description']"
             [tableStyle]="{ 'min-width': '75rem' }"
             [(selection)]="selectedIngredients"
             [rowHover]="true"
@@ -80,6 +95,7 @@ interface ExportColumn {
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} ingredients"
             [showCurrentPageReport]="true"
             [rowsPerPageOptions]="[10, 20, 30]"
+            [loading]="loading"
         >
             <ng-template #caption>
                 <div class="flex items-center justify-between">
@@ -100,9 +116,11 @@ interface ExportColumn {
                         Nom
                         <p-sortIcon field="name" />
                     </th>
-
+                    <th pSortableColumn="description" style="min-width:16rem">
+                        Description
+                        <p-sortIcon field="description" />
+                    </th>
                     <th>Image</th>
-
                     <th style="min-width: 12rem"></th>
                 </tr>
             </ng-template>
@@ -113,40 +131,74 @@ interface ExportColumn {
                     </td>
                     <td style="min-width: 12rem">{{ ingredient.id }}</td>
                     <td style="min-width: 16rem">{{ ingredient.name }}</td>
-
+                    <td style="min-width: 16rem">{{ ingredient.description }}</td>
                     <td>
-                        <img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + ingredient.image" [alt]="ingredient.name" style="width: 64px" class="rounded" />
-                    </td>
-
+        <img [src]="ingredient.photos?.length ? ingredient.photos[0].url : 'assets/imgs/ingr.png'" [alt]="ingredient.name || 'Ingredient'" style="width: 64px" class="rounded" />
+    </td>
                     <td>
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editIngredient(ingredient)" />
                         <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteIngredient(ingredient)" />
-                        <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editIngredient(ingredient)" />
                     </td>
+                </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="6">Aucun ingrédient trouvé.</td>
                 </tr>
             </ng-template>
         </p-table>
 
-        <p-dialog [(visible)]="ingredientDialog" [style]="{ width: '450px' }" header="Details De L'ingrédient" [modal]="true">
+        <p-dialog [(visible)]="ingredientDialog" [style]="{ width: '650px' }" header="Details De L'ingrédient" [modal]="true" styleClass="p-fluid">
             <ng-template #content>
                 <div class="flex flex-col gap-6">
-                    <img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + ingredient.image" [alt]="ingredient.image" class="block m-auto pb-4" *ngIf="ingredient.image" />
+                    <!-- Affichage des images existantes en mode carousel lors de l'édition -->
+                    <div *ngIf="ingredient.id && galleryImages.length > 0" class="mb-4">
+                        <label class="block font-bold mb-3">Images existantes</label>
+                        <p-galleria [value]="galleryImages" [responsiveOptions]="galleriaResponsiveOptions" [containerStyle]="{ 'max-width': '600px' }" [numVisible]="5">
+                            <ng-template #item let-item>
+                                <!-- <pre> {{item | json }} </pre> -->
+                                <img [src]="item.itemImageSrc" style="width:100%; max-height: 300px; object-fit: contain;" [alt]="item.alt" />
+                            </ng-template>
+                            <ng-template #thumbnail let-item>
+                                <img [src]="item.thumbnailImageSrc" style="width: 70px; height: 70px; object-fit: cover;" [alt]="item.alt" />
+                            </ng-template>
+                        </p-galleria>
+                    </div>
+
+                    <!-- Upload de nouvelles images -->
+                    <div>
+                        <label class="block font-bold mb-3">Ajouter des images</label>
+                        <p-fileupload 
+                            name="demo[]" 
+                            (onSelect)="onFileSelect($event)"
+                            [multiple]="true" 
+                            accept="image/*" 
+                            maxFileSize="5000000"
+                            [showUploadButton]="false"
+                            [showCancelButton]="false"
+                            mode="advanced">
+                            <ng-template #empty>
+                                <div>Glissez et déposez les images ici.</div>
+                            </ng-template>
+                        </p-fileupload>
+                    </div>
 
                     <div>
                         <label for="name" class="block font-bold mb-3">Nom</label>
-                        <input type="text" pInputText id="name" [(ngModel)]="ingredient.name" required autofocus fluid />
+                        <input type="text" pInputText id="name" [(ngModel)]="ingredient.name" required autofocus />
                         <small class="text-red-500" *ngIf="submitted && !ingredient.name">Le nom est requis.</small>
                     </div>
+                    
                     <div>
                         <label for="description" class="block font-bold mb-3">Description</label>
-                        <textarea id="description" pTextarea [(ngModel)]="ingredient.description" required rows="3" cols="20" fluid></textarea>
+                        <textarea id="description" pTextarea [(ngModel)]="ingredient.description" rows="3" cols="20"></textarea>
                     </div>
                 </div>
             </ng-template>
 
             <ng-template #footer>
-                <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
-                <p-button label="Save" icon="pi pi-check" (click)="saveIngredient()" />
+                <p-button label="Annuler" icon="pi pi-times" text (click)="hideDialog()" />
+                <p-button label="Enregistrer" icon="pi pi-check" (click)="saveIngredient()" />
             </ng-template>
         </p-dialog>
 
@@ -156,16 +208,34 @@ interface ExportColumn {
 })
 export class Ingredients implements OnInit {
     ingredientDialog: boolean = false;
+    loading: boolean = true;
 
     ingredients = signal<Ingredient[]>([]);
 
-    ingredient!: Ingredient;
+    ingredient: Ingredient = {};
 
-    selectedIngredients!: Ingredient[] | null;
+    selectedIngredients: Ingredient[] | null = null;
 
     submitted: boolean = false;
 
-    statuses!: any[];
+    selectedFiles: File[] = [];
+    base64Images: string[] = [];
+    galleryImages: GalleriaImage[] = [];
+
+    galleriaResponsiveOptions = [
+        {
+            breakpoint: '1024px',
+            numVisible: 5
+        },
+        {
+            breakpoint: '768px',
+            numVisible: 3
+        },
+        {
+            breakpoint: '560px',
+            numVisible: 1
+        }
+    ];
 
     @ViewChild('dt') dt!: Table;
 
@@ -184,30 +254,35 @@ export class Ingredients implements OnInit {
     }
 
     ngOnInit() {
-        this.loadDemoData();
-    }
-
-    loadDemoData() {
-    
-        this.ingredientService.getAllIngredients().subscribe({
-            next: (response: any) => {
-              console.log('ingredients de l\'API :', response);
-                this.ingredients = response.map((ingredient: any) => ({ name: ingredient.name, code: ingredient.id }));
-              
-            },
-            error: (error) => {
-              console.log('Erreur lors de la connexion :', error);
-              const errorMessage = error?.error?.message || 'Coordonnées Invalides';
-              // this.toastService.showError(errorMessage);
-            }
-          });
+        this.loadIngredients();
 
         this.cols = [
-            { field: 'code', header: 'Code', customExportHeader: 'Ingredient Code' },
-            { field: 'name', header: 'Name' }
+            { field: 'id', header: 'Code', customExportHeader: 'Ingredient Code' },
+            { field: 'name', header: 'Nom' },
+            { field: 'description', header: 'Description' }
         ];
 
         this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
+    }
+
+    loadIngredients() {
+        this.loading = true;
+        this.ingredientService.getAllIngredients()
+            .pipe(finalize(() => this.loading = false))
+            .subscribe({
+                next: (data: Ingredient[]) => {
+                    this.ingredients.set(data);
+                },
+                error: (error) => {
+                    console.error('Erreur lors du chargement des ingrédients:', error);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Erreur',
+                        detail: 'Impossible de charger les ingrédients',
+                        life: 3000
+                    });
+                }
+            });
     }
 
     onGlobalFilter(table: Table, event: Event) {
@@ -218,27 +293,90 @@ export class Ingredients implements OnInit {
         this.ingredient = {};
         this.submitted = false;
         this.ingredientDialog = true;
+        this.selectedFiles = [];
+        this.base64Images = [];
+        this.galleryImages = [];
     }
 
     editIngredient(ingredient: Ingredient) {
-        this.ingredient = { ...ingredient };
-        this.ingredientDialog = true;
+        // Charger l'ingrédient complet avec ses photos
+        this.loading = true;
+        this.ingredientService.getIngredientById(ingredient.id!)
+            .pipe(finalize(() => this.loading = false))
+            .subscribe({
+                next: (data: Ingredient) => {
+                    this.ingredient = { ...data };
+                    this.ingredientDialog = true;
+                    this.selectedFiles = [];
+                    this.base64Images = [];
+                    
+                    // Créer les images pour la galerie
+                    if (this.ingredient.photos && this.ingredient.photos.length > 0) {
+                        this.galleryImages = this.ingredient.photos.map(photo => ({
+                            itemImageSrc: photo.url,
+                            thumbnailImageSrc: photo.url,
+                            alt: this.ingredient.name || 'Image',
+                            title: this.ingredient.name || 'Image'
+                        }));
+                    } else {
+                        this.galleryImages = [];
+                    }
+                },
+                error: (error) => {
+                    console.error('Erreur lors du chargement des détails:', error);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Erreur',
+                        detail: 'Impossible de charger les détails de l\'ingrédient',
+                        life: 3000
+                    });
+                }
+            });
+    }
+
+    onFileSelect(event: any) {
+        this.selectedFiles = event.files;
+        
+        // Convertir les fichiers en base64
+        for (let file of this.selectedFiles) {
+            const reader = new FileReader();
+            reader.onload = (e: any) => {
+                this.base64Images.push(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     deleteSelectedIngredients() {
         this.confirmationService.confirm({
-            message: 'Are you sure you want to delete the selected ingredient?',
-            header: 'Confirm',
+            message: 'Êtes-vous sûr de vouloir supprimer les ingrédients sélectionnés?',
+            header: 'Confirmation',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.ingredients.set(this.ingredients().filter((val) => !this.selectedIngredients?.includes(val)));
-                this.selectedIngredients = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'ingredient Deleted',
-                    life: 3000
-                });
+                const deletePromises = this.selectedIngredients!.map(ingredient => 
+                    this.ingredientService.deleteIngredient(ingredient.id!).toPromise()
+                );
+                
+                Promise.all(deletePromises)
+                    .then(() => {
+                        this.ingredients.set(this.ingredients().filter(val => !this.selectedIngredients?.includes(val)));
+                        this.selectedIngredients = null;
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Succès',
+                            detail: 'Ingrédients supprimés',
+                            life: 3000
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors de la suppression des ingrédients:', error);
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Erreur',
+                            detail: 'Impossible de supprimer les ingrédients',
+                            life: 3000
+                        });
+                    });
             }
         });
     }
@@ -246,75 +384,123 @@ export class Ingredients implements OnInit {
     hideDialog() {
         this.ingredientDialog = false;
         this.submitted = false;
+        this.selectedFiles = [];
+        this.base64Images = [];
     }
 
     deleteIngredient(ingredient: Ingredient) {
         this.confirmationService.confirm({
-            message: 'Are you sure you want to delete ' + ingredient.name + '?',
-            header: 'Confirm',
+            message: 'Êtes-vous sûr de vouloir supprimer ' + ingredient.name + '?',
+            header: 'Confirmation',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                this.ingredients.set(this.ingredients().filter((val) => val.id !== ingredient.id));
-                this.ingredient = {};
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Ingredient Deleted',
-                    life: 3000
-                });
+                this.ingredientService.deleteIngredient(ingredient.id!)
+                    .subscribe({
+                        next: () => {
+                            this.ingredients.set(this.ingredients().filter(val => val.id !== ingredient.id));
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Succès',
+                                detail: 'Ingrédient supprimé',
+                                life: 3000
+                            });
+                        },
+                        error: (error) => {
+                            console.error('Erreur lors de la suppression:', error);
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Erreur',
+                                detail: 'Impossible de supprimer l\'ingrédient',
+                                life: 3000
+                            });
+                        }
+                    });
             }
         });
     }
 
-    findIndexById(id: string): number {
-        let index = -1;
-        for (let i = 0; i < this.ingredients().length; i++) {
-            if (this.ingredients()[i].id === id) {
-                index = i;
-                break;
-            }
-        }
-
-        return index;
-    }
-
-    createId(): string {
-        let id = '';
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < 5; i++) {
-            id += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return id;
-    }
-
     saveIngredient() {
         this.submitted = true;
-        let _ingredients = this.ingredients();
-        if (this.ingredient.name?.trim()) {
-            if (this.ingredient.id) {
-                _ingredients[this.findIndexById(this.ingredient.id)] = this.ingredient;
-                this.ingredients.set([..._ingredients]);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Ingredient Updated',
-                    life: 3000
-                });
-            } else {
-                this.ingredient.id = this.createId();
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Ingredient Created',
-                    life: 3000
-                });
-                console.log('les données', this.ingredient);
-
-                this.ingredients.set([..._ingredients, this.ingredient]);
-            }
-
-            this.ingredientDialog = false;
-            this.ingredient = {};
+    
+        if (!this.ingredient.name?.trim()) {
+            return;
         }
+    
+        // Extraire et supprimer 'photos' pour éviter les erreurs de validation Prisma
+        const { photos, ...ingredientWithoutPhotos } = this.ingredient;
+        
+        // Préparation des données avec les images
+        const ingredientData = { 
+            ...ingredientWithoutPhotos,
+            ...(this.base64Images.length ? { imgUrls: this.base64Images } : {})
+        };
+    
+        // Ajouter un log pour déboguer
+        console.log('Données à envoyer:', ingredientData);
+    
+        if (this.ingredient.id) {
+            // Mise à jour
+            this.ingredientService.updateIngredient(this.ingredient.id, ingredientData)
+                .subscribe({
+                    next: (updatedIngredient) => {
+                        const index = this.findIndexById(this.ingredient.id!);
+                        if (index !== -1) {
+                            const updatedIngredients = [...this.ingredients()];
+                            updatedIngredients[index] = updatedIngredient;
+                            this.ingredients.set(updatedIngredients);
+                        }
+                        
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Succès',
+                            detail: 'Ingrédient mis à jour',
+                            life: 3000
+                        });
+                        this.ingredientDialog = false;
+                        this.ingredient = {};
+                        this.selectedFiles = [];
+                        this.base64Images = [];
+                    },
+                    error: (error) => {
+                        console.error('Erreur lors de la mise à jour:', error);
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Erreur',
+                            detail: 'Impossible de mettre à jour l\'ingrédient',
+                            life: 3000
+                        });
+                    }
+                });
+        } else {
+            // Création - pas de changement nécessaire ici
+            this.ingredientService.createIngredient(ingredientData)
+                .subscribe({
+                    next: (newIngredient) => {
+                        this.ingredients.set([...this.ingredients(), newIngredient]);
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Succès',
+                            detail: 'Ingrédient créé',
+                            life: 3000
+                        });
+                        this.ingredientDialog = false;
+                        this.ingredient = {};
+                        this.selectedFiles = [];
+                        this.base64Images = [];
+                    },
+                    error: (error) => {
+                        console.error('Erreur lors de la création:', error);
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Erreur',
+                            detail: 'Impossible de créer l\'ingrédient',
+                            life: 3000
+                        });
+                    }
+                });
+        }
+    }
+    findIndexById(id: string): number {
+        return this.ingredients().findIndex(ingredient => ingredient.id === id);
     }
 }
