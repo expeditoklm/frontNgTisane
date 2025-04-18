@@ -9,14 +9,14 @@ import { MenuModule } from 'primeng/menu';
     imports: [CommonModule, ButtonModule, MenuModule],
     template: `<div class="card">
         <div class="flex items-center justify-between mb-6">
-            <div class="font-semibold text-xl">Recent Activity</div>
+            <div class="font-semibold text-xl">Activité Récente</div>
             <div>
                 <button pButton type="button" icon="pi pi-ellipsis-v" class="p-button-rounded p-button-text p-button-plain" (click)="menu.toggle($event)"></button>
                 <p-menu #menu [popup]="true" [model]="items"></p-menu>
             </div>
         </div>
 
-        <span *ngIf="todayActivities.length > 0" class="block text-muted-color font-medium mb-4">TODAY</span>
+        <span *ngIf="todayActivities.length > 0" class="block text-muted-color font-medium mb-4">AUJOURD'HUI</span>
         <ul *ngIf="todayActivities.length > 0" class="p-0 mx-0 mt-0 mb-6 list-none">
             <li *ngFor="let activity of todayActivities" class="flex items-center py-2 border-b border-surface">
                 <!-- <pre> {{activity | json}}  </pre> -->
@@ -32,7 +32,7 @@ import { MenuModule } from 'primeng/menu';
             </li>
         </ul>
 
-        <span *ngIf="olderActivities.length > 0" class="block text-muted-color font-medium mb-4">EARLIER</span>
+        <span *ngIf="olderActivities.length > 0" class="block text-muted-color font-medium mb-4">PRÉCÉDEMMENT</span>
         <ul *ngIf="olderActivities.length > 0" class="p-0 m-0 list-none">
             <li *ngFor="let activity of olderActivities" class="flex items-center py-2 border-b border-surface">
                 <div [ngClass]="getIconBackground(activity.type)" class="w-12 h-12 flex items-center justify-center rounded-full mr-4 shrink-0">
@@ -48,7 +48,7 @@ import { MenuModule } from 'primeng/menu';
         </ul>
         
         <div *ngIf="recentActivity.length === 0" class="flex justify-center items-center h-32">
-            <span class="text-muted-color">No recent activity to display</span>
+            <span class="text-muted-color">Aucune activité récente à afficher</span>
         </div>
     </div>`
 })
@@ -67,8 +67,8 @@ export class NotificationsWidget {
     olderActivities: any[] = [];
     
     items = [
-        { label: 'Refresh', icon: 'pi pi-fw pi-refresh' },
-        { label: 'View All', icon: 'pi pi-fw pi-list' }
+        { label: 'Actualiser', icon: 'pi pi-fw pi-refresh' },
+        { label: 'Voir tout', icon: 'pi pi-fw pi-list' }
     ];
     
     categorizeActivities() {
@@ -109,11 +109,11 @@ export class NotificationsWidget {
     
     getActivityDescription(activity: any): string {
         switch(activity.type) {
-            case 'remedies': return 'remedy was added or updated';
-            case 'ingredients': return 'ingredient was added to your collection';
-            case 'diseases': return 'health condition was added to database';
-            case 'categories': return 'category was created or updated';
-            default: return 'was modified';
+            case 'remedies': return 'remède a été ajouté ou mis à jour';
+            case 'ingredients': return 'ingrédient a été ajouté à votre collection';
+            case 'diseases': return 'condition de santé a été ajoutée à la base de données';
+            case 'categories': return 'catégorie a été créée ou mise à jour';
+            default: return 'a été modifié';
         }
     }
 }

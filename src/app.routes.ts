@@ -10,11 +10,14 @@ import { Ingredients } from './app/pages/crud/ingredients-crud';
 import { Remedies } from './app/pages/crud/remedies-crud';
 import { Categories } from './app/pages/crud/categories-crud';
 import { HerbalDashboard } from './app/pages/herbalDash/dashboard';
+import { AuthGuard, GuestGuard } from './app/_guards/auth-guard.service';
+import { Login } from './app/pages/auth/login';
 
 export const appRoutes: Routes = [
     {
         path: '',
         component: AppLayout,
+        canActivate: [AuthGuard],
         children: [
             { path: '', component: HerbalDashboard },
             { path: 'uikit', loadChildren: () => import('./app/pages/uikit/uikit.routes') },
@@ -27,7 +30,15 @@ export const appRoutes: Routes = [
         ]
     },
     { path: 'landing', component: Landing },
+    { 
+        path: 'login', 
+        component: Login,
+        canActivate: [GuestGuard]
+    },
+    { 
+        path: 'auth', 
+        loadChildren: () => import('./app/pages/auth/auth.routes') 
+    },
     { path: 'notfound', component: Notfound },
-    { path: 'auth', loadChildren: () => import('./app/pages/auth/auth.routes') },
     { path: '**', redirectTo: '/notfound' }
 ];

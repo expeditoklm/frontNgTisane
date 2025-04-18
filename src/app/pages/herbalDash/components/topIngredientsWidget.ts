@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
     imports: [CommonModule, ButtonModule, MenuModule],
     template: `<div class="card">
         <div class="flex justify-between items-center mb-6">
-            <div class="font-semibold text-xl">Most Used Ingredients</div>
+            <div class="font-semibold text-xl">Ingrédients les Plus Utilisés</div>
             <div>
                 <button pButton type="button" icon="pi pi-ellipsis-v" class="p-button-rounded p-button-text p-button-plain" (click)="menu.toggle($event)"></button>
                 <p-menu #menu [popup]="true" [model]="items"></p-menu>
@@ -20,7 +20,7 @@ import { Router } from '@angular/router';
             <li *ngFor="let ingredient of displayIngredients" class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
                 <div>
                     <span class="text-surface-900 dark:text-surface-0 font-medium mr-2 mb-1 md:mb-0">{{ingredient.name}}</span>
-                    <div class="mt-1 text-muted-color">{{ingredient.usageCount}} remedies</div>
+                    <div class="mt-1 text-muted-color">{{ingredient.usageCount}} remèdes</div>
                 </div>
                 <div class="mt-2 md:mt-0 flex items-center">
                     <div class="bg-surface-300 dark:bg-surface-500 rounded-border overflow-hidden w-40 lg:w-24" style="height: 8px">
@@ -30,11 +30,11 @@ import { Router } from '@angular/router';
                 </div>
             </li>
             <li *ngIf="displayIngredients.length === 0" class="flex justify-center p-4">
-                <span class="text-muted-color">No ingredients data available.</span>
+                <span class="text-muted-color">Aucune donnée d'ingrédients disponible.</span>
             </li>
         </ul>
         <div class="flex justify-content-end mt-4">
-            <button pButton pRipple type="button" label="View All Ingredients" 
+            <button pButton pRipple type="button" label="Voir Tous les Ingrédients" 
                 class="p-button-text p-button-sm" 
                 (click)="viewAllIngredients()"></button>
         </div>
@@ -45,8 +45,8 @@ export class TopIngredientsWidget implements OnChanges {
     displayIngredients: any[] = [];
     
     items = [
-        { label: 'Add New Ingredient', icon: 'pi pi-fw pi-plus', command: () => this.router.navigate(['/ingredients/new']) },
-        { label: 'View All Ingredients', icon: 'pi pi-fw pi-list', command: () => this.router.navigate(['/ingredients']) }
+        { label: 'Ajouter un Nouvel Ingrédient', icon: 'pi pi-fw pi-plus', command: () => this.router.navigate(['/ingredients/new']) },
+        { label: 'Voir Tous les Ingrédients', icon: 'pi pi-fw pi-list', command: () => this.router.navigate(['/ingredients']) }
     ];
     
     constructor(private router: Router) {}

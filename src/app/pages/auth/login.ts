@@ -1,17 +1,34 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
+import { AuthService } from '../../services/auth.service';
+import { SignInCredentials } from '../../models/signInCredentials.model';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
+    imports: [
+        CommonModule,
+        ButtonModule, 
+        CheckboxModule, 
+        InputTextModule, 
+        PasswordModule, 
+        FormsModule, 
+        RouterModule, 
+        RippleModule, 
+        ToastModule,
+        AppFloatingConfigurator
+    ],
+    providers: [MessageService],
     template: `
         <app-floating-configurator />
         <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
@@ -36,36 +53,100 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
                                     />
                                 </g>
                             </svg>
-                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to PrimeLand!</div>
-                            <span class="text-muted-color font-medium">Sign in to continue</span>
+                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Bienvenue sur Herbal App!</div>
+                            <span class="text-muted-color font-medium">Connectez-vous pour continuer</span>
                         </div>
 
                         <div>
                             <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
-                            <input pInputText id="email1" type="text" placeholder="Email address" class="w-full md:w-[30rem] mb-8" [(ngModel)]="email" />
+                            <input pInputText id="email1" type="text" placeholder="Adresse email" class="w-full md:w-[30rem] mb-4" [(ngModel)]="credentials.email" />
 
-                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
+                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Mot de passe</label>
+                            <p-password id="password1" [(ngModel)]="credentials.password" placeholder="Mot de passe" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
 
-                            <div class="flex items-center justify-between mt-2 mb-8 gap-8">
+                            <div class="flex items-center justify-between mt-2 mb-6 gap-8">
                                 <div class="flex items-center">
-                                    <p-checkbox [(ngModel)]="checked" id="rememberme1" binary class="mr-2"></p-checkbox>
-                                    <label for="rememberme1">Remember me</label>
+                                    <p-checkbox [(ngModel)]="rememberMe" id="rememberme1" binary class="mr-2"></p-checkbox>
+                                    <label for="rememberme1">Se souvenir de moi</label>
                                 </div>
-                                <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
+                                <a class="font-medium no-underline ml-2 text-right cursor-pointer text-primary" routerLink="/auth/forgot-password">Mot de passe oublié?</a>
                             </div>
-                            <p-button label="Sign In" styleClass="w-full" routerLink="/"></p-button>
+                            
+                            <p-button 
+                                label="Se connecter" 
+                                styleClass="w-full" 
+                                (onClick)="login()"
+                                [loading]="loading">
+                            </p-button>
+                            
+                            <div class="text-center mt-6">
+                                <span class="text-muted-color mr-2">Vous n'avez pas de compte?</span>
+                                <a class="font-medium no-underline text-primary cursor-pointer" routerLink="/auth/register">Créer un compte</a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <p-toast></p-toast>
     `
 })
-export class Login {
-    email: string = '';
+export class Login implements OnInit {
+    credentials: SignInCredentials = {
+        email: '',
+        password: ''
+    };
 
-    password: string = '';
+    rememberMe: boolean = false;
+    loading: boolean = false;
 
-    checked: boolean = false;
+    constructor(
+        private authService: AuthService,
+        private router: Router,
+        private messageService: MessageService
+    ) {}
+
+    ngOnInit(): void {
+        // Vérifier si l'utilisateur est déjà connecté
+        if (this.authService.isLoggedIn()) {
+            this.router.navigate(['/']);
+        }
+    }
+
+    login(): void {
+        if (!this.credentials.email || !this.credentials.password) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Erreur',
+                detail: 'Veuillez remplir tous les champs'
+            });
+            return;
+        }
+
+        this.loading = true;
+        this.authService.signIn(this.credentials).subscribe({
+            next: (response) => {
+                this.loading = false;
+                this.router.navigate(['/']);
+            },
+            error: (error) => {
+                this.loading = false;
+                console.error('Erreur lors de la connexion', error);
+                
+                let errorMessage = 'Une erreur est survenue lors de la connexion';
+                if (error.status === 401) {
+                    errorMessage = 'Email ou mot de passe incorrect';
+                } else if (error.error && error.error.message) {
+                    errorMessage = error.error.message;
+                }
+                
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Erreur de connexion',
+                    detail: errorMessage
+                });
+            }
+        });
+    }
 }

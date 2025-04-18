@@ -11,13 +11,13 @@ import { Router } from '@angular/router';
     selector: 'app-recent-remedies-widget',
     imports: [CommonModule, TableModule, ButtonModule, RippleModule, TooltipModule],
     template: `<div class="card !mb-8">
-        <div class="font-semibold text-xl mb-4">Recent Remedies</div>
+        <div class="font-semibold text-xl mb-4">Remèdes Récents</div>
         <p-table [value]="displayRemedies" [paginator]="false" [rows]="5" responsiveLayout="scroll">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>Name</th>
-                    <th>Ingredients</th>
-                    <th>Effectiveness</th>
+                    <th>Nom</th>
+                    <th>Ingrédients</th>
+                    <th>Efficacité</th>
                     <th>Actions</th>
                 </tr>
             </ng-template>
@@ -27,7 +27,7 @@ import { Router } from '@angular/router';
                         <span class="font-medium">{{ remedy.name }}</span>
                     </td>
                     <td style="width: 40%; min-width: 7rem;">
-                        {{ remedy.ingredientCount }} ingredients
+                        {{ remedy.ingredientCount }} ingrédients
                     </td>
                     <td style="width: 15%; min-width: 8rem;">
                         <div class="bg-surface-300 dark:bg-surface-500 rounded-border overflow-hidden" style="height: 8px">
@@ -38,23 +38,23 @@ import { Router } from '@angular/router';
                     <td style="width: 15%;">
                         <button pButton pRipple type="button" icon="pi pi-eye" 
                             class="p-button p-component p-button-text p-button-icon-only"
-                            pTooltip="View Remedy" tooltipPosition="top"
+                            pTooltip="Voir le Remède" tooltipPosition="top"
                             (click)="viewRemedy(remedy.id)"></button>
                         <button pButton pRipple type="button" icon="pi pi-pencil" 
                             class="p-button p-component p-button-text p-button-icon-only"
-                            pTooltip="Edit Remedy" tooltipPosition="top"
+                            pTooltip="Modifier le Remède" tooltipPosition="top"
                             (click)="editRemedy(remedy.id)"></button>
                     </td>
                 </tr>
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="4" class="text-center p-4">No remedies found.</td>
+                    <td colspan="4" class="text-center p-4">Aucun remède trouvé.</td>
                 </tr>
             </ng-template>
         </p-table>
         <div class="flex justify-content-end mt-4">
-            <button pButton pRipple type="button" label="View All Remedies" 
+            <button pButton pRipple type="button" label="Voir Tous les Remèdes" 
                 class="p-button-text p-button-sm" 
                 (click)="viewAllRemedies()"></button>
         </div>
