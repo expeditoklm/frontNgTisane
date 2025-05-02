@@ -1,9 +1,10 @@
 {
-    "rewrites": [
-        {
-            "source": "/:path*",
-            "destination": "/index.html"
-        }
+    "version": 2,
+    "routes": [
+      { "handle": "filesystem" },
+      { "src": "/(.*)", "dest": "/index.html" }
     ],
-    "trailingSlash": false
-}
+    "buildCommand": "ng build",
+    "outputDirectory": "dist/sakai-ng",
+    "framework": "angular"
+  }
