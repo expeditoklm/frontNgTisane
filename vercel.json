@@ -1,9 +1,11 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/test.html", "dest": "/test.html" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
-  "buildCommand": "ng build",
-  "outputDirectory": "dist/sakai-ng/browser"
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "dist/output",
+  "framework": null
 }
