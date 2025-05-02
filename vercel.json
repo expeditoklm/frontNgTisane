@@ -1,10 +1,9 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/(assets|favicon\\.ico|.*\\.js|.*\\.css|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.gif)$", "dest": "/$1" },
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "buildCommand": "ng build",
-  "outputDirectory": "dist/sakai-ng",
-  "framework": "angular"
+  "outputDirectory": "dist/sakai-ng/browser"
 }
