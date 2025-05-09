@@ -1,7 +1,0 @@
-//     sessionStorage.setItem("user_session_token", token);
-        //     sessionStorage.setItem("user_session_username", user.userName + ' ' + user.name );
-        //     // this.toastService.showSuccess('Connexion réussie !');
-        //     // Redirige vers la route précédente si elle existe, sinon vers le tableau de bord
-        //   const redirectUrl = this.navigationService.getPreviousUrl() || '/dashboard';
-        //   this.navigationService.clearPreviousUrl();
-        //   this.router.navigate([redirectUrl]);

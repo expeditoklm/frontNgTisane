@@ -17,7 +17,7 @@
                 "build": {
                     "builder": "@angular-devkit/build-angular:application",
                     "options": {
-                        "outputPath": "dist/sakai-ng",
+                        "outputPath": "dist/sakai-ng/browser",
                         "index": "src/index.html",
                         "browser": "src/main.ts",
                         "polyfills": [
@@ -26,12 +26,13 @@
                         "tsConfig": "tsconfig.app.json",
                         "inlineStyleLanguage": "scss",
                         "assets": [
+                            "src/favicon.ico",
+                            "src/assets",
                             {
                                 "glob": "**/*",
                                 "input": "public",
-                                "output": "assets"
-                            },
-                            "src/assets/"
+                                "output": "/"
+                            }
                         ],
                         "styles": [
                             "src/styles.scss"
@@ -91,8 +92,8 @@
                                 "glob": "**/*",
                                 "input": "public"
                             },
-                              "src/assets",
-                              "src/favicon.ico"
+                            "src/assets",
+                            "src/favicon.ico"
                         ],
                         "styles": [
                             "src/styles.scss"
@@ -104,6 +105,6 @@
         }
     },
     "cli": {
-      "analytics": false
+        "analytics": false
     }
 }
